@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Slideshow</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      color: white;
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .slide {
+      display: none;
+      max-height: 80vh;
+      max-width: 100%;
+    }
+    .controls {
+      margin-top: 20px;
+    }
+    .controls button {
+      background: #444;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin: 0 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+    .progress {
+      margin-top: 10px;
+      font-size: 18px;
+    }
+  </style>
+</head>
+<body>
+  <img id="slideshow-image" class="slide" src="" alt="Slideshow image">
+  <div class="progress" id="progress">Posture 0/0</div>
+  <div class="controls">
+    <button onclick="pauseSlideshow()">Pause</button>
+    <button onclick="startSlideshow()">Play</button>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const timer = parseInt(params.get("timer")) || 3000;
+    let index = 0;
+    let intervalId = null;
+
+    function getImageUrlsFromParams() {
+      const urls = [];
+      for (const [key, value] of params.entries()) {
+        if (key.startsWith("img")) {
+          urls.push(decodeURIComponent(value));
+        }
+      }
+      return urls;
+    }
+
+    const imageUrls = getImageUrlsFromParams();
+    const imageElement = document.getElementById("slideshow-image");
+    const progressText = document.getElementById("progress");
+
+    function showImage(i) {
+      if (imageUrls.length === 0) return;
+      imageElement.src = imageUrls[i];
+      imageElement.style.display = "block";
+      progressText.textContent = `Posture ${i + 1}/${imageUrls.length}`;
+    }
+
+    function showNext() {
+      index = (index + 1) % imageUrls.length;
+      showImage(index);
+    }
+
+    function startSlideshow() {
+      if (!intervalId) {
+        showImage(index); // Show first immediately
+        intervalId = setInterval(showNext, timer);
+      }
+    }
+
+    function pauseSlideshow() {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+
+    // Auto-start on load if images exist
+    if (imageUrls.length > 0) {
+      startSlideshow();
+    } else {
+      progressText.textContent = "Aucune image à afficher.";
+    }
+  </script>
+</body>
+</html>
