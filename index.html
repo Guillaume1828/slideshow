@@ -1,129 +1,65 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Slideshow personnalisé</title>
+  <meta charset="UTF-8" />
+  <title>Slideshow</title>
   <style>
-    body {
-      margin: 0;
-      background-color: #111;
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-    }
-    img {
-      max-height: 70vh;
-      max-width: 100%;
-      object-fit: contain;
-      display: block;
-      margin-top: 20px;
-    }
-    .controls {
-      display: flex;
-      gap: 20px;
-      margin-top: 20px;
-    }
-    .controls button {
-      background: linear-gradient(135deg, #444, #222);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      font-size: 16px;
-      border-radius: 30px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .controls button:hover {
-      background: linear-gradient(135deg, #666, #333);
-    }
-    .progress {
-      margin-top: 10px;
-      font-size: 20px;
-    }
-    .timer {
-      margin-top: 5px;
-      font-size: 16px;
-      color: #ccc;
-    }
+    body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #000; }
+    img { max-width: 100%; max-height: 80vh; object-fit: contain; }
+    #progress { color: white; margin-top: 10px; font-size: 20px; }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
   </style>
 </head>
 <body>
-
-  <img id="slide-img" src="" alt="Slideshow" />
-  <div class="progress" id="progress">Posture 0/0</div>
-  <div class="timer" id="timer">0s</div>
-
-  <div class="controls">
-    <button onclick="pauseSlideshow()">⏸ Pause</button>
-    <button onclick="startSlideshow()">▶ Play</button>
+  <img id="slideshow" src="" />
+  <div id="progress">0/0</div>
+  <div>
+    <button onclick="togglePlayPause()">⏯️</button>
   </div>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(window.location.search);
     const images = [];
-    const timers = [];
-
-    for (let i = 1; i <= 50; i++) {
-      const img = params.get("img" + i);
-      const t = parseInt(params.get("t" + i));
-      if (img) {
-        images.push(img);
-        timers.push(isNaN(t) ? 3000 : t); // default 3000ms
-      }
+    const times = [];
+    for (let i = 1; ; i++) {
+      const img = urlParams.get(`img${i}`);
+      const t = parseInt(urlParams.get(`t${i}`));
+      if (!img) break;
+      images.push(img);
+      times.push(isNaN(t) ? 3000 : t);
     }
 
+    const imgElement = document.getElementById("slideshow");
+    const progress = document.getElementById("progress");
     let index = 0;
-    let timerId = null;
-    let countdownId = null;
-    const imgEl = document.getElementById("slide-img");
-    const progressEl = document.getElementById("progress");
-    const timerEl = document.getElementById("timer");
+    let playing = true;
+    let interval = null;
 
     function showImage(i) {
-      imgEl.src = images[i];
-      progressEl.textContent = `Posture ${i + 1}/${images.length}`;
-      startCountdown(timers[i]);
-    }
-
-    function startCountdown(ms) {
-      clearInterval(countdownId);
-      let seconds = Math.floor(ms / 1000);
-      timerEl.textContent = `${seconds}s`;
-      countdownId = setInterval(() => {
-        seconds--;
-        timerEl.textContent = `${seconds}s`;
-        if (seconds <= 0) clearInterval(countdownId);
-      }, 1000);
-    }
-
-    function showNextImage() {
-      showImage(index);
-      timerId = setTimeout(() => {
-        index = (index + 1) % images.length;
-        showNextImage();
-      }, timers[index]);
+      imgElement.src = images[i];
+      progress.textContent = `Posture ${i + 1}/${images.length}`;
     }
 
     function startSlideshow() {
-      clearTimeout(timerId);
-      showNextImage();
-    }
-
-    function pauseSlideshow() {
-      clearTimeout(timerId);
-      clearInterval(countdownId);
-    }
-
-    if (images.length > 0) {
       showImage(index);
-    } else {
-      document.body.innerHTML = "<p style='color:white'>Aucune image trouvée dans l'URL.</p>";
+      interval = setInterval(() => {
+        index = (index + 1) % images.length;
+        showImage(index);
+      }, times[index]);
     }
-  </script>
 
+    function stopSlideshow() {
+      clearInterval(interval);
+    }
+
+    function togglePlayPause() {
+      playing = !playing;
+      if (playing) startSlideshow();
+      else stopSlideshow();
+    }
+
+    if (images.length > 0) startSlideshow();
+    else document.body.innerHTML = "<h2 style='color:white;'>Aucune image trouvée dans l’URL.</h2>";
+  </script>
 </body>
 </html>
