@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Slideshow Mobile</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <style>
     * {
       box-sizing: border-box;
@@ -15,27 +14,44 @@
       color: white;
       font-family: sans-serif;
       overflow: hidden;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
     }
     #slideshow-container {
       position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
-      padding-top: 60px; /* Remontée de 50px */
+      padding-top: 60px;
     }
     #slide-image {
       width: 300px;
       height: 450px;
       object-fit: cover;
-      margin: 0 auto;
-      display: block;
       border-radius: 10px;
+      z-index: 1;
+    }
+    .nav-button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 2.5em;
+      background: rgba(0,0,0,0.5);
+      border: none;
+      color: white;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 3;
+    }
+    #prev-btn {
+      left: 10px;
+    }
+    #next-btn {
+      right: 10px;
     }
     #overlay {
       position: fixed;
@@ -47,8 +63,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 0;
-      z-index: 2;
+      z-index: 5;
     }
     #play-btn {
       padding: 15px 25px;
@@ -59,49 +74,14 @@
       border-radius: 12px;
       cursor: pointer;
     }
-    #title, #timer {
-      font-size: 1.2em;
-      padding: 6px 10px;
-      background: rgba(0,0,0,0.5);
-      border-radius: 10px;
-      z-index: 3;
-      text-align: center;
-    }
-    #title {
+    #title, #duration, #timer {
       margin-top: 10px;
-    }
-    #duration {
-  font-size: 1em;
-  margin-top: 5px;
-  background: rgba(0, 0, 0, 0.4);
-  padding: 4px 8px;
-  border-radius: 8px;
-}
-
-    #timer {
-      margin-top: 5px;
-    }
-    #controls {
-      margin-top: 20px;
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      z-index: 3;
-    }
-    #progress-container {
-      width: 300px;
-      height: 12px;
-      background-color: #333;
-      border-radius: 6px;
-      cursor: pointer;
-      position: relative;
-    }
-    #progress-bar {
-      width: 0%;
-      height: 100%;
-      background-color: #4caf50;
-      border-radius: 6px;
-      transition: width 0.1s linear;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 1.2em;
+      z-index: 2;
+      text-align: center;
     }
     #pause-btn {
       position: absolute;
@@ -113,27 +93,26 @@
       padding: 8px 12px;
       font-size: 1em;
       cursor: pointer;
-      z-index: 3;
+      z-index: 4;
     }
   </style>
 </head>
 <body>
 
 <div id="slideshow-container">
+  <button class="nav-button" id="prev-btn">←</button>
   <img id="slide-image" src="" alt="">
+  <button class="nav-button" id="next-btn">→</button>
+
   <div id="overlay">
     <button id="play-btn">▶ Play</button>
   </div>
+
   <div id="title"></div>
   <div id="duration"></div>
   <div id="timer"></div>
-  <button id="pause-btn" style="display:none;">❚❚ Pause</button>
-</div>
 
-<div id="controls">
-  <div id="progress-container">
-    <div id="progress-bar"></div>
-  </div>
+  <button id="pause-btn" style="display:none;">❚❚ Pause</button>
 </div>
 
 <audio id="gong" src="https://assets.mixkit.co/sfx/download/mixkit-clear-bell-tone-2861.mp3"></audio>
@@ -149,106 +128,77 @@ let currentIndex = 0;
 let startTime = null;
 let interval;
 let playing = false;
+
 const slideImage = document.getElementById("slide-image");
 const overlay = document.getElementById("overlay");
 const playBtn = document.getElementById("play-btn");
 const pauseBtn = document.getElementById("pause-btn");
 const title = document.getElementById("title");
+const duration = document.getElementById("duration");
 const timer = document.getElementById("timer");
 const gong = document.getElementById("gong");
-const progressBar = document.getElementById("progress-bar");
-const progressContainer = document.getElementById("progress-container");
+const prevBtn = document.getElementById("prev-btn");
+const nextBtn = document.getElementById("next-btn");
 
-
-  function updateSlide(index) {
+function updateSlide(index) {
   const slide = slides[index];
   slideImage.src = slide.url;
   title.textContent = slide.title;
   duration.textContent = `Durée : ${slide.duration}s`;
+  timer.textContent = `Temps restant : ${slide.duration}s`;
 }
-
 
 function startSlideshow() {
   overlay.style.display = "none";
   pauseBtn.style.display = "block";
   playing = true;
   startTime = Date.now();
-  
-  updateSlide(currentIndex);
 
+  updateSlide(currentIndex);
+  clearInterval(interval);
   interval = setInterval(() => {
     const elapsed = (Date.now() - startTime) / 1000;
     const slide = slides[currentIndex];
     const timeLeft = slide.duration - elapsed;
-    timer.textContent = `${Math.max(0, Math.floor(timeLeft))}s`;
-    updateProgressBar(elapsed);
+    timer.textContent = `Temps restant : ${Math.max(0, Math.floor(timeLeft))}s`;
 
     if (elapsed >= slide.duration) {
       gong.play();
-      currentIndex++;
-      if (currentIndex >= slides.length) {
-        clearInterval(interval);
-        playing = false;
-        overlay.style.display = "flex";
-        playBtn.textContent = "▶ Replay";
-        pauseBtn.style.display = "none";
-        return;
-      }
+      currentIndex = (currentIndex + 1) % slides.length;
       updateSlide(currentIndex);
       startTime = Date.now();
     }
   }, 100);
 }
 
-function updateProgressBar(elapsedTime) {
-  const totalDuration = slides.reduce((total, slide) => total + slide.duration, 0);
-  const progress = (elapsedTime / totalDuration) * 100;
-  progressBar.style.width = `${progress}%`;
-}
-
-function resetSlideshow() {
-  currentIndex = 0;
-  updateSlide(currentIndex);
-  updateProgressBar(0);
-}
-
-playBtn.addEventListener("click", () => {
-  if (!playing) {
-    startSlideshow();
-  }
-});
-
-pauseBtn.addEventListener("click", () => {
+function pauseSlideshow() {
   playing = false;
   clearInterval(interval);
   overlay.style.display = "flex";
   pauseBtn.style.display = "none";
-  playBtn.textContent = "▶ Resume";
-});
-
-progressContainer.addEventListener("click", (e) => {
-  const rect = progressContainer.getBoundingClientRect();
-  const clickX = e.clientX - rect.left;
-  const percent = clickX / rect.width;
-  const totalDuration = slides.reduce((total, slide) => total + slide.duration, 0);
-  const newTime = percent * totalDuration;
-  startTime = Date.now() - newTime * 1000;
-  currentIndex = findSlideIndexFromTime(newTime);
-  updateSlide(currentIndex);
-  updateProgressBar(newTime);
-  if (playing) {
-    startSlideshow();
-  }
-});
-
-function findSlideIndexFromTime(seconds) {
-  let total = 0;
-  for (let i = 0; i < slides.length; i++) {
-    total += slides[i].duration;
-    if (total > seconds) return i;
-  }
-  return slides.length - 1;
+  playBtn.textContent = "▶ Reprendre";
 }
+
+playBtn.addEventListener("click", () => {
+  startSlideshow();
+});
+
+pauseBtn.addEventListener("click", pauseSlideshow);
+
+prevBtn.addEventListener("click", () => {
+  currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+  updateSlide(currentIndex);
+  if (playing) startSlideshow();
+});
+
+nextBtn.addEventListener("click", () => {
+  currentIndex = (currentIndex + 1) % slides.length;
+  updateSlide(currentIndex);
+  if (playing) startSlideshow();
+});
+
+// Initialisation
+updateSlide(currentIndex);
 </script>
 
 </body>
