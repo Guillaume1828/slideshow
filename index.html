@@ -27,6 +27,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
+      padding-top: 60px; /* Remontée de 50px */
     }
     #slide-image {
       width: 300px; /* Agrandissement de l'image de 50% */
@@ -230,29 +231,3 @@ progressContainer.addEventListener("click", (e) => {
   const targetIndex = Math.floor(percent * slides.length);
   currentIndex = targetIndex;
   updateSlide(currentIndex);
-  updateProgressBar();
-  startTime = Date.now();
-  if (playing) {
-    startSlideshow();
-  }
-});
-
-function startSlideshowFromTime(fromTime) {
-  startTime = Date.now() - (fromTime * 1000);
-  currentIndex = findSlideIndexFromTime(fromTime);
-  updateSlide(currentIndex);
-  startSlideshow();
-}
-
-function findSlideIndexFromTime(seconds) {
-  let total = 0;
-  for (let i = 0; i < slides.length; i++) {
-    total += slides[i].duration;
-    if (total > seconds) return i;
-  }
-  return slides.length - 1;
-}
-</script>
-
-</body>
-</html>
