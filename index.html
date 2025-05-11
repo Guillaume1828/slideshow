@@ -70,6 +70,14 @@
     #title {
       margin-top: 10px;
     }
+    #duration {
+  font-size: 1em;
+  margin-top: 5px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
     #timer {
       margin-top: 5px;
     }
@@ -117,6 +125,7 @@
     <button id="play-btn">▶ Play</button>
   </div>
   <div id="title"></div>
+  <div id="duration"></div>
   <div id="timer"></div>
   <button id="pause-btn" style="display:none;">❚❚ Pause</button>
 </div>
@@ -150,12 +159,14 @@ const gong = document.getElementById("gong");
 const progressBar = document.getElementById("progress-bar");
 const progressContainer = document.getElementById("progress-container");
 
-function updateSlide(index) {
+
+  function updateSlide(index) {
   const slide = slides[index];
   slideImage.src = slide.url;
   title.textContent = slide.title;
-  timer.textContent = `${slide.duration}s`;
+  duration.textContent = `Durée : ${slide.duration}s`;
 }
+
 
 function startSlideshow() {
   overlay.style.display = "none";
