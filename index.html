@@ -11,7 +11,7 @@
     }
     body {
       margin: 0;
-      background-color: rgb(238, 231, 221); /* Couleur de fond ajustée */
+      background-color: rgb(238, 231, 221);
       color: white;
       font-family: sans-serif;
       overflow: hidden;
@@ -30,7 +30,7 @@
       padding-top: 60px; /* Remontée de 50px */
     }
     #slide-image {
-      width: 300px; /* Agrandissement de l'image de 50% */
+      width: 300px;
       height: 450px;
       object-fit: cover;
       margin: 0 auto;
@@ -131,16 +131,15 @@
 
 <script>
 const slides = [
-  { url: "https://picsum.photos/id/1011/300/450", title: "Tadasana", duration: 5 },
-  { url: "https://picsum.photos/id/1025/300/450", title: "Ulala asana", duration: 4 },
-  { url: "https://picsum.photos/id/1050/300/450", title: "Testasana", duration: 6 }
+  { url: "https://picsum.photos/id/1011/300/450", title: "Montagnes paisibles", duration: 5 },
+  { url: "https://picsum.photos/id/1025/300/450", title: "Chien mignon", duration: 4 },
+  { url: "https://picsum.photos/id/1050/300/450", title: "Forêt d'automne", duration: 6 }
 ];
 
 let currentIndex = 0;
 let startTime = null;
-let elapsedTime = 0;
-let playing = false;
 let interval;
+let playing = false;
 const slideImage = document.getElementById("slide-image");
 const overlay = document.getElementById("overlay");
 const playBtn = document.getElementById("play-btn");
@@ -162,22 +161,18 @@ function startSlideshow() {
   overlay.style.display = "none";
   pauseBtn.style.display = "block";
   playing = true;
-  currentIndex = 0;
-  elapsedTime = 0;
   startTime = Date.now();
-
-  updateSlide(currentIndex);
   
+  updateSlide(currentIndex);
+
   interval = setInterval(() => {
     const elapsed = (Date.now() - startTime) / 1000;
-    elapsedTime = elapsed;
-    updateProgressBar();
-
     const slide = slides[currentIndex];
-    const timeLeft = slide.duration - (elapsed - getStartTimeForSlide(currentIndex));
+    const timeLeft = slide.duration - elapsed;
     timer.textContent = `${Math.max(0, Math.floor(timeLeft))}s`;
+    updateProgressBar(elapsed);
 
-    if (elapsed >= getStartTimeForSlide(currentIndex) + slide.duration) {
+    if (elapsed >= slide.duration) {
       gong.play();
       currentIndex++;
       if (currentIndex >= slides.length) {
@@ -194,26 +189,22 @@ function startSlideshow() {
   }, 100);
 }
 
-function updateProgressBar() {
-  const totalSlides = slides.length;
-  const progress = (currentIndex / totalSlides) * 100;
+function updateProgressBar(elapsedTime) {
+  const totalDuration = slides.reduce((total, slide) => total + slide.duration, 0);
+  const progress = (elapsedTime / totalDuration) * 100;
   progressBar.style.width = `${progress}%`;
 }
 
-function getStartTimeForSlide(index) {
-  let start = 0;
-  for (let i = 0; i < index; i++) {
-    start += slides[i].duration;
-  }
-  return start;
-}
-
-function getTotalElapsedTime() {
-  return slides.reduce((acc, slide) => acc + slide.duration, 0);
+function resetSlideshow() {
+  currentIndex = 0;
+  updateSlide(currentIndex);
+  updateProgressBar(0);
 }
 
 playBtn.addEventListener("click", () => {
-  startSlideshow();
+  if (!playing) {
+    startSlideshow();
+  }
 });
 
 pauseBtn.addEventListener("click", () => {
@@ -228,22 +219,16 @@ progressContainer.addEventListener("click", (e) => {
   const rect = progressContainer.getBoundingClientRect();
   const clickX = e.clientX - rect.left;
   const percent = clickX / rect.width;
-  const targetIndex = Math.floor(percent * slides.length);
-  currentIndex = targetIndex;
+  const totalDuration = slides.reduce((total, slide) => total + slide.duration, 0);
+  const newTime = percent * totalDuration;
+  startTime = Date.now() - newTime * 1000;
+  currentIndex = findSlideIndexFromTime(newTime);
   updateSlide(currentIndex);
-  updateProgressBar();
-  startTime = Date.now();
+  updateProgressBar(newTime);
   if (playing) {
     startSlideshow();
   }
 });
-
-function startSlideshowFromTime(fromTime) {
-  startTime = Date.now() - (fromTime * 1000);
-  currentIndex = findSlideIndexFromTime(fromTime);
-  updateSlide(currentIndex);
-  startSlideshow();
-}
 
 function findSlideIndexFromTime(seconds) {
   let total = 0;
