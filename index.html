@@ -11,7 +11,6 @@
     body {
       margin: 0;
       background-color: rgb(238, 231, 221);
-      color: white;
       font-family: sans-serif;
       overflow: hidden;
       height: 100vh;
@@ -41,24 +40,25 @@
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      width: 60px;
-      height: 100%;
+      width: 50px;
+      height: 50px;
+      background-color: rgba(0, 0, 0, 0.4);
+      border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.5em;
+      font-size: 1.8em;
       color: white;
-      background-color: rgba(0, 0, 0, 0.2);
       cursor: pointer;
       z-index: 3;
     }
 
     #left-arrow {
-      left: 0;
+      left: 10px;
     }
 
     #right-arrow {
-      right: 0;
+      right: 10px;
     }
 
     #overlay {
@@ -84,7 +84,7 @@
       cursor: pointer;
     }
 
-    #title, #timer {
+    #title {
       margin-top: 10px;
       background: rgba(0, 0, 0, 0.5);
       padding: 6px 12px;
@@ -92,17 +92,26 @@
       font-size: 1.2em;
       z-index: 2;
       text-align: center;
+      color: white;
+    }
+
+    #timer {
+      margin-top: 5px;
+      font-size: 1.1em;
+      color: black;
     }
 
     #pause-btn {
       position: absolute;
       top: 10px;
       right: 10px;
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(0, 0, 0, 0.4);
       border: none;
-      border-radius: 8px;
-      padding: 8px 12px;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
       font-size: 1em;
+      color: white;
       cursor: pointer;
       z-index: 4;
     }
@@ -122,7 +131,7 @@
   <div id="title"></div>
   <div id="timer"></div>
 
-  <button id="pause-btn" style="display:none;">❚❚ Pause</button>
+  <button id="pause-btn" style="display:none;">❚❚</button>
 </div>
 
 <audio id="gong" src="https://assets.mixkit.co/sfx/download/mixkit-clear-bell-tone-2861.mp3"></audio>
@@ -153,7 +162,7 @@ function updateSlide(index) {
   const slide = slides[index];
   slideImage.src = slide.url;
   title.textContent = slide.title;
-  timer.textContent = `Temps restant : ${slide.duration}s`;
+  timer.textContent = `${slide.duration}s`;
 }
 
 function startSlideshow() {
@@ -167,8 +176,8 @@ function startSlideshow() {
   interval = setInterval(() => {
     const elapsed = (Date.now() - startTime) / 1000;
     const slide = slides[currentIndex];
-    const timeLeft = slide.duration - elapsed;
-    timer.textContent = `Temps restant : ${Math.max(0, Math.floor(timeLeft))}s`;
+    const timeLeft = Math.max(0, Math.ceil(slide.duration - elapsed));
+    timer.textContent = `${timeLeft}s`;
 
     if (elapsed >= slide.duration) {
       gong.play();
@@ -176,7 +185,7 @@ function startSlideshow() {
       updateSlide(currentIndex);
       startTime = Date.now();
     }
-  }, 100);
+  }, 250);
 }
 
 function pauseSlideshow() {
@@ -187,10 +196,7 @@ function pauseSlideshow() {
   playBtn.textContent = "▶ Reprendre";
 }
 
-playBtn.addEventListener("click", () => {
-  startSlideshow();
-});
-
+playBtn.addEventListener("click", startSlideshow);
 pauseBtn.addEventListener("click", pauseSlideshow);
 
 leftArrow.addEventListener("click", () => {
