@@ -1,65 +1,236 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Slideshow</title>
+  <meta charset="UTF-8">
+  <title>Slideshow Mobile</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
-    body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #000; }
-    img { max-width: 100%; max-height: 80vh; object-fit: contain; }
-    #progress { color: white; margin-top: 10px; font-size: 20px; }
-    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background-color: black;
+      color: white;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    #slideshow-container {
+      position: relative;
+      width: 100%;
+      height: 100vh;
+    }
+    #slide-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+    #play-btn {
+      padding: 15px 25px;
+      font-size: 1.5em;
+      background: white;
+      color: black;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+    #title, #timer {
+      position: absolute;
+      bottom: 60px;
+      font-size: 1.2em;
+      padding: 8px 12px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 10px;
+      z-index: 3;
+    }
+    #title {
+      left: 10px;
+    }
+    #timer {
+      right: 10px;
+    }
+    #controls {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      z-index: 3;
+      padding: 0 10px;
+    }
+    #progress-container {
+      width: 100%;
+      height: 12px;
+      background-color: #333;
+      border-radius: 6px;
+      cursor: pointer;
+      position: relative;
+    }
+    #progress-bar {
+      width: 0%;
+      height: 100%;
+      background-color: #4caf50;
+      border-radius: 6px;
+      transition: width 0.1s linear;
+    }
+    #pause-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 1em;
+      cursor: pointer;
+      z-index: 3;
+    }
+
+    @media (max-width: 600px) {
+      #title, #timer {
+        font-size: 1em;
+        bottom: 50px;
+      }
+      #play-btn {
+        font-size: 1.2em;
+        padding: 12px 20px;
+      }
+    }
   </style>
 </head>
 <body>
-  <img id="slideshow" src="" />
-  <div id="progress">0/0</div>
-  <div>
-    <button onclick="togglePlayPause()">⏯️</button>
+
+<div id="slideshow-container">
+  <img id="slide-image" src="" alt="">
+  <div id="overlay">
+    <button id="play-btn">▶ Play</button>
   </div>
+  <div id="title"></div>
+  <div id="timer"></div>
+  <button id="pause-btn" style="display:none;">❚❚ Pause</button>
+</div>
 
-  <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const images = [];
-    const times = [];
-    for (let i = 1; ; i++) {
-      const img = urlParams.get(`img${i}`);
-      const t = parseInt(urlParams.get(`t${i}`));
-      if (!img) break;
-      images.push(img);
-      times.push(isNaN(t) ? 3000 : t);
+<div id="controls">
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+  </div>
+</div>
+
+<audio id="gong" src="https://assets.mixkit.co/sfx/download/mixkit-clear-bell-tone-2861.mp3"></audio>
+
+<script>
+const slides = [
+  { url: "https://via.placeholder.com/800x600/111?text=1", title: "Image 1", duration: 5 },
+  { url: "https://via.placeholder.com/800x600/222?text=2", title: "Image 2", duration: 3 },
+  { url: "https://via.placeholder.com/800x600/333?text=3", title: "Image 3", duration: 4 }
+];
+
+let currentIndex = 0;
+let startTime = null;
+let totalDuration = slides.reduce((sum, s) => sum + s.duration, 0);
+let elapsed = 0;
+let playing = false;
+let interval;
+const slideImage = document.getElementById("slide-image");
+const overlay = document.getElementById("overlay");
+const playBtn = document.getElementById("play-btn");
+const pauseBtn = document.getElementById("pause-btn");
+const title = document.getElementById("title");
+const timer = document.getElementById("timer");
+const gong = document.getElementById("gong");
+const progressBar = document.getElementById("progress-bar");
+const progressContainer = document.getElementById("progress-container");
+
+function updateSlide(index) {
+  const slide = slides[index];
+  slideImage.src = slide.url;
+  title.textContent = slide.title;
+  const currentSlideStart = getStartTimeForSlide(index);
+  const currentElapsed = elapsed - currentSlideStart;
+  timer.textContent = `${Math.max(0, Math.floor(slide.duration - currentElapsed))}s`;
+}
+
+function startSlideshow(fromTime = 0) {
+  overlay.style.display = "none";
+  pauseBtn.style.display = "block";
+  playing = true;
+  elapsed = fromTime;
+  currentIndex = findSlideIndexFromTime(elapsed);
+  updateSlide(currentIndex);
+  startTime = Date.now() - (elapsed * 1000);
+
+  clearInterval(interval);
+  interval = setInterval(() => {
+    elapsed = (Date.now() - startTime) / 1000;
+    updateProgressBar();
+    const targetIndex = findSlideIndexFromTime(elapsed);
+    if (targetIndex !== currentIndex) {
+      currentIndex = targetIndex;
+      if (currentIndex >= slides.length) {
+        clearInterval(interval);
+        playing = false;
+        overlay.style.display = "flex";
+        playBtn.textContent = "▶ Replay";
+        pauseBtn.style.display = "none";
+        return;
+      }
+      updateSlide(currentIndex);
+      gong.play();
     }
+    updateSlide(currentIndex);
+  }, 200);
+}
 
-    const imgElement = document.getElementById("slideshow");
-    const progress = document.getElementById("progress");
-    let index = 0;
-    let playing = true;
-    let interval = null;
+function updateProgressBar() {
+  const percent = Math.min(100, (elapsed / totalDuration) * 100);
+  progressBar.style.width = `${percent}%`;
+}
 
-    function showImage(i) {
-      imgElement.src = images[i];
-      progress.textContent = `Posture ${i + 1}/${images.length}`;
+function findSlideIndexFromTime(seconds) {
+  let time = 0;
+  for (let i = 0; i < slides.length; i++) {
+    if (seconds < time + slides[i].duration) {
+      return i;
     }
+    time += slides[i].duration;
+  }
+  return slides.length;
+}
 
-    function startSlideshow() {
-      showImage(index);
-      interval = setInterval(() => {
-        index = (index + 1) % images.length;
-        showImage(index);
-      }, times[index]);
-    }
+function getStartTimeForSlide(index) {
+  return slides.slice(0, index).reduce((sum, s) => sum + s.duration, 0);
+}
 
-    function stopSlideshow() {
-      clearInterval(interval);
-    }
+playBtn.addEventListener("click", () => {
+  startSlideshow(0);
+});
 
-    function togglePlayPause() {
-      playing = !playing;
-      if (playing) startSlideshow();
-      else stopSlideshow();
-    }
+pauseBtn.addEventListener("click", () => {
+  playing = false;
+  clearInterval(interval);
+  overlay.style.display = "flex";
+  pauseBtn.style.display = "none";
+  playBtn.textContent = "▶ Reprendre";
+});
 
-    if (images.length > 0) startSlideshow();
-    else document.body.innerHTML = "<h2 style='color:white;'>Aucune image trouvée dans l’URL.</h2>";
-  </script>
+progressContainer.addEventListener("click", (e) => {
+  const rect = progressContainer.getBoundingClientRect();
+  const clickX = e.clientX - rect.left;
+  const percent = clickX / rect.width;
+  const targetTime = percent * totalDuration;
+  startSlideshow(targetTime);
+});
+</script>
+
 </body>
 </html>
