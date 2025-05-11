@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Slideshow Mobile</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <style>
     * {
       box-sizing: border-box;
@@ -13,7 +13,7 @@
       background-color: rgb(238, 231, 221);
       font-family: sans-serif;
       overflow: hidden;
-      height: 100vh;
+      height: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -25,7 +25,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-top: 40px;
+      padding-top: 60px;
     }
 
     #slide-image {
@@ -62,7 +62,7 @@
     }
 
     #overlay {
-      position: fixed;
+      position: absolute; /* Changement de 'fixed' à 'absolute' */
       top: 0;
       left: 0;
       width: 100%;
@@ -115,6 +115,12 @@
       cursor: pointer;
       z-index: 4;
     }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+    }
+
   </style>
 </head>
 <body>
@@ -160,9 +166,12 @@ const rightArrow = document.getElementById("right-arrow");
 
 function updateSlide(index) {
   const slide = slides[index];
-  slideImage.src = slide.url;
+  slideImage.src = '';  // Réinitialise l'URL de l'image
+  setTimeout(() => {
+    slideImage.src = slide.url;  // Charge l'image après un léger délai
+  }, 100);
   title.textContent = slide.title;
-  timer.textContent = ${slide.duration}s;
+  timer.textContent = `${slide.duration}s`;
 }
 
 function startSlideshow() {
@@ -177,7 +186,7 @@ function startSlideshow() {
     const elapsed = (Date.now() - startTime) / 1000;
     const slide = slides[currentIndex];
     const timeLeft = Math.max(0, Math.ceil(slide.duration - elapsed));
-    timer.textContent = ${timeLeft}s;
+    timer.textContent = `${timeLeft}s`;
 
     if (elapsed >= slide.duration) {
       gong.play();
@@ -209,6 +218,18 @@ rightArrow.addEventListener("click", () => {
   currentIndex = (currentIndex + 1) % slides.length;
   updateSlide(currentIndex);
   if (playing) startSlideshow();
+});
+
+// Fonction de touchstart pour Android et autres appareils tactiles
+playBtn.addEventListener("touchstart", function(event) {
+  event.preventDefault();
+  startSlideshow();
+});
+
+slideImage.addEventListener("touchstart", function() {
+  if (playing) {
+    pauseSlideshow();
+  }
 });
 
 // Initialisation
