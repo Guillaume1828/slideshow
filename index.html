@@ -132,7 +132,7 @@
 <script>
 const slides = [
   { url: "https://picsum.photos/id/1011/300/450", title: "Tadasana", duration: 5 },
-  { url: "https://picsum.photos/id/1025/300/450", title: "Ulala lasana", duration: 4 },
+  { url: "https://picsum.photos/id/1025/300/450", title: "Ulala asana", duration: 4 },
   { url: "https://picsum.photos/id/1050/300/450", title: "Testasana", duration: 6 }
 ];
 
@@ -231,3 +231,29 @@ progressContainer.addEventListener("click", (e) => {
   const targetIndex = Math.floor(percent * slides.length);
   currentIndex = targetIndex;
   updateSlide(currentIndex);
+  updateProgressBar();
+  startTime = Date.now();
+  if (playing) {
+    startSlideshow();
+  }
+});
+
+function startSlideshowFromTime(fromTime) {
+  startTime = Date.now() - (fromTime * 1000);
+  currentIndex = findSlideIndexFromTime(fromTime);
+  updateSlide(currentIndex);
+  startSlideshow();
+}
+
+function findSlideIndexFromTime(seconds) {
+  let total = 0;
+  for (let i = 0; i < slides.length; i++) {
+    total += slides[i].duration;
+    if (total > seconds) return i;
+  }
+  return slides.length - 1;
+}
+</script>
+
+</body>
+</html>
