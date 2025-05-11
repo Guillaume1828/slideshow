@@ -34,31 +34,7 @@
       object-fit: cover;
       border-radius: 10px;
       z-index: 1;
-    }
-
-    .arrow-overlay {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 50px;
-      height: 50px;
-      background-color: rgba(0, 0, 0, 0.4);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.8em;
-      color: white;
       cursor: pointer;
-      z-index: 3;
-    }
-
-    #left-arrow {
-      left: 10px;
-    }
-
-    #right-arrow {
-      right: 10px;
     }
 
     #overlay {
@@ -84,54 +60,54 @@
       cursor: pointer;
     }
 
+    #title-bar {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      justify-content: center;
+    }
+
     #title {
-      margin-top: 10px;
       background: rgba(0, 0, 0, 0.5);
       padding: 6px 12px;
       border-radius: 8px;
-      font-size: 1.2em;
-      z-index: 2;
-      text-align: center;
+      font-size: 1.1em;
       color: white;
     }
 
     #timer {
-      margin-top: 5px;
       font-size: 1.1em;
       color: black;
     }
 
-    #pause-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: rgba(0, 0, 0, 0.4);
+    .control-btn {
+      background: rgba(0, 0, 0, 0.5);
       border: none;
       border-radius: 50%;
       width: 40px;
       height: 40px;
-      font-size: 1em;
+      font-size: 1.2em;
       color: white;
       cursor: pointer;
-      z-index: 4;
     }
   </style>
 </head>
 <body>
 
 <div id="slideshow-container">
-  <div class="arrow-overlay" id="left-arrow">←</div>
   <img id="slide-image" src="" alt="">
-  <div class="arrow-overlay" id="right-arrow">→</div>
+
+  <div id="title-bar">
+    <button class="control-btn" id="left-arrow">←</button>
+    <div id="title"></div>
+    <div id="timer"></div>
+    <button class="control-btn" id="right-arrow">→</button>
+  </div>
 
   <div id="overlay">
     <button id="play-btn">▶ Play</button>
   </div>
-
-  <div id="title"></div>
-  <div id="timer"></div>
-
-  <button id="pause-btn" style="display:none;">❚❚</button>
 </div>
 
 <audio id="gong" src="https://assets.mixkit.co/sfx/download/mixkit-clear-bell-tone-2861.mp3"></audio>
@@ -151,7 +127,6 @@ let playing = false;
 const slideImage = document.getElementById("slide-image");
 const overlay = document.getElementById("overlay");
 const playBtn = document.getElementById("play-btn");
-const pauseBtn = document.getElementById("pause-btn");
 const title = document.getElementById("title");
 const timer = document.getElementById("timer");
 const gong = document.getElementById("gong");
@@ -167,7 +142,6 @@ function updateSlide(index) {
 
 function startSlideshow() {
   overlay.style.display = "none";
-  pauseBtn.style.display = "block";
   playing = true;
   startTime = Date.now();
 
@@ -192,12 +166,17 @@ function pauseSlideshow() {
   playing = false;
   clearInterval(interval);
   overlay.style.display = "flex";
-  pauseBtn.style.display = "none";
   playBtn.textContent = "▶ Reprendre";
 }
 
 playBtn.addEventListener("click", startSlideshow);
-pauseBtn.addEventListener("click", pauseSlideshow);
+slideImage.addEventListener("click", () => {
+  if (playing) {
+    pauseSlideshow();
+  } else {
+    startSlideshow();
+  }
+});
 
 leftArrow.addEventListener("click", () => {
   currentIndex = (currentIndex - 1 + slides.length) % slides.length;
