@@ -140,8 +140,7 @@ const slides = [
 
 let currentIndex = 0;
 let startTime = null;
-let totalDuration = slides.reduce((sum, s) => sum + s.duration, 0);
-let elapsed = 0;
+let elapsedTime = 0;
 let playing = false;
 let interval;
 const slideImage = document.getElementById("slide-image");
@@ -158,27 +157,31 @@ function updateSlide(index) {
   const slide = slides[index];
   slideImage.src = slide.url;
   title.textContent = slide.title;
-  const currentSlideStart = getStartTimeForSlide(index);
-  const currentElapsed = elapsed - currentSlideStart;
-  timer.textContent = `${Math.max(0, Math.floor(slide.duration - currentElapsed))}s`;
+  timer.textContent = `${slide.duration}s`;
 }
 
-function startSlideshow(fromTime = 0) {
+function startSlideshow() {
   overlay.style.display = "none";
   pauseBtn.style.display = "block";
   playing = true;
-  elapsed = fromTime;
-  currentIndex = findSlideIndexFromTime(elapsed);
-  updateSlide(currentIndex);
-  startTime = Date.now() - (elapsed * 1000);
+  currentIndex = 0;
+  elapsedTime = 0;
+  startTime = Date.now();
 
-  clearInterval(interval);
+  updateSlide(currentIndex);
+  
   interval = setInterval(() => {
-    elapsed = (Date.now() - startTime) / 1000;
-    updateProgressBar();
-    const targetIndex = findSlideIndexFromTime(elapsed);
-    if (targetIndex !== currentIndex) {
-      currentIndex = targetIndex;
+    const elapsed = (Date.now() - startTime) / 1000;
+    elapsedTime = elapsed;
+    updateProgressBar(elapsed);
+
+    const slide = slides[currentIndex];
+    const timeLeft = slide.duration - (elapsed - getStartTimeForSlide(currentIndex));
+    timer.textContent = `${Math.max(0, Math.floor(timeLeft))}s`;
+
+    if (elapsed >= getStartTimeForSlide(currentIndex) + slide.duration) {
+      gong.play();
+      currentIndex++;
       if (currentIndex >= slides.length) {
         clearInterval(interval);
         playing = false;
@@ -188,34 +191,31 @@ function startSlideshow(fromTime = 0) {
         return;
       }
       updateSlide(currentIndex);
-      gong.play();
+      startTime = Date.now();
     }
-    updateSlide(currentIndex);
-  }, 200);
+  }, 100);
 }
 
-function updateProgressBar() {
-  const percent = Math.min(100, (elapsed / totalDuration) * 100);
-  progressBar.style.width = `${percent}%`;
-}
-
-function findSlideIndexFromTime(seconds) {
-  let time = 0;
-  for (let i = 0; i < slides.length; i++) {
-    if (seconds < time + slides[i].duration) {
-      return i;
-    }
-    time += slides[i].duration;
-  }
-  return slides.length;
+function updateProgressBar(elapsed) {
+  const totalElapsed = getTotalElapsedTime();
+  const progress = (elapsed / totalElapsed) * 100;
+  progressBar.style.width = `${progress}%`;
 }
 
 function getStartTimeForSlide(index) {
-  return slides.slice(0, index).reduce((sum, s) => sum + s.duration, 0);
+  let start = 0;
+  for (let i = 0; i < index; i++) {
+    start += slides[i].duration;
+  }
+  return start;
+}
+
+function getTotalElapsedTime() {
+  return slides.reduce((acc, slide) => acc + slide.duration, 0);
 }
 
 playBtn.addEventListener("click", () => {
-  startSlideshow(0);
+  startSlideshow();
 });
 
 pauseBtn.addEventListener("click", () => {
@@ -223,16 +223,32 @@ pauseBtn.addEventListener("click", () => {
   clearInterval(interval);
   overlay.style.display = "flex";
   pauseBtn.style.display = "none";
-  playBtn.textContent = "▶ Reprendre";
+  playBtn.textContent = "▶ Resume";
 });
 
 progressContainer.addEventListener("click", (e) => {
   const rect = progressContainer.getBoundingClientRect();
   const clickX = e.clientX - rect.left;
   const percent = clickX / rect.width;
-  const targetTime = percent * totalDuration;
-  startSlideshow(targetTime);
+  const targetTime = percent * getTotalElapsedTime();
+  startSlideshowFromTime(targetTime);
 });
+
+function startSlideshowFromTime(fromTime) {
+  startTime = Date.now() - (fromTime * 1000);
+  currentIndex = findSlideIndexFromTime(fromTime);
+  updateSlide(currentIndex);
+  startSlideshow();
+}
+
+function findSlideIndexFromTime(seconds) {
+  let total = 0;
+  for (let i = 0; i < slides.length; i++) {
+    total += slides[i].duration;
+    if (total > seconds) return i;
+  }
+  return slides.length - 1;
+}
 </script>
 
 </body>
